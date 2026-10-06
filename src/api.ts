@@ -14,6 +14,7 @@ function normalizeItem(r: Record<string, unknown>): Item {
     image: r.image as string,
     note: r.note as string,
     planned_date: r.planned_date as string,
+    purchased_at: r.purchased_at as string,
     status: r.status as Item['status'],
     created_at: r.created_at as string,
     updated_at: r.updated_at as string,

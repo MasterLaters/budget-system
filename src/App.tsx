@@ -55,7 +55,8 @@ export default function App() {
   const handleEdit = (item: Item) => { setEditingItem(item); setModalOpen(true); };
   const handleDelete = async (id: number) => { if (!confirm('确定删除？')) return; await api.deleteItem(id); await fetchData(); };
   const handleAdd = () => { setEditingItem(null); setModalOpen(true); };
-  const handleStatusChange = async (id: number, status: ItemStatus) => {
+  const handleStatusChange = async (id: number, status: ItemStatus, name: string) => {
+    if (!confirm(`确定把「${name}」标记为「${status}」吗？`)) return;
     await api.updateItem(id, { status });
     await fetchData();
   };

@@ -24,6 +24,7 @@ export default function ItemModal({ item, onSave, onClose }: Props) {
     image: '',
     note: '',
     planned_date: '',
+    purchased_at: '',
     status: '想买',
   });
 
@@ -39,6 +40,7 @@ export default function ItemModal({ item, onSave, onClose }: Props) {
         image: item.image,
         note: item.note,
         planned_date: item.planned_date,
+        purchased_at: item.purchased_at,
         status: item.status,
       });
     }
@@ -184,6 +186,22 @@ export default function ItemModal({ item, onSave, onClose }: Props) {
               onChange={(e) => update('planned_date', e.target.value)}
             />
           </div>
+
+          {form.status === '已买' && (
+            <div className="form-group">
+              <label className="label-text">购买日期</label>
+              <input
+                className="input"
+                type="date"
+                value={form.purchased_at.slice(0, 10)}
+                onChange={(e) => {
+                  // 保留原有的时分秒
+                  const time = form.purchased_at.length > 10 ? form.purchased_at.slice(11) : '00:00:00';
+                  update('purchased_at', e.target.value ? `${e.target.value} ${time}` : '');
+                }}
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label className="label-text">备注</label>

@@ -5,7 +5,7 @@ interface Props {
   item: Item;
   onEdit: (item: Item) => void;
   onDelete: (id: number) => void;
-  onStatusChange: (id: number, status: ItemStatus) => void;
+  onStatusChange: (id: number, status: ItemStatus, name: string) => void;
 }
 
 const CATEGORY_BADGE: Record<string, string> = {
@@ -71,9 +71,14 @@ export default function ItemCard({ item, onEdit, onDelete, onStatusChange }: Pro
           <p className="item-card-note">{item.note}</p>
         )}
 
-        {item.planned_date && (
+        {(item.planned_date || (item.status === '已买' && item.purchased_at)) && (
           <div className="item-card-meta" style={{ marginTop: '0.25rem' }}>
-            <span className="badge badge-gray">📅 {item.planned_date}</span>
+            {item.planned_date && (
+              <span className="badge badge-gray">📅 {item.planned_date}</span>
+            )}
+            {item.status === '已买' && item.purchased_at && (
+              <span className="badge badge-green">🛒 购于 {item.purchased_at.slice(0, 10)}</span>
+            )}
           </div>
         )}
 
@@ -91,7 +96,7 @@ export default function ItemCard({ item, onEdit, onDelete, onStatusChange }: Pro
             <button
               key={target}
               className={STATUS_BTN_CLASS[target]}
-              onClick={() => onStatusChange(item.id, target)}
+              onClick={() => onStatusChange(item.id, target, item.name)}
             >
               {target}
             </button>

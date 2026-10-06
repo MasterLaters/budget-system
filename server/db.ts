@@ -39,11 +39,18 @@ db.exec(`
     image TEXT DEFAULT '',
     note TEXT DEFAULT '',
     planned_date TEXT DEFAULT '',
+    purchased_at TEXT DEFAULT '',
     status TEXT NOT NULL DEFAULT '想买',
     created_at TEXT DEFAULT (datetime('now', 'localtime')),
     updated_at TEXT DEFAULT (datetime('now', 'localtime'))
   )
 `);
+
+// 迁移：为旧库补充 purchased_at 字段（已存在则跳过）
+const itemCols = db.prepare('PRAGMA table_info(items)').all() as { name: string }[];
+if (!itemCols.some((c) => c.name === 'purchased_at')) {
+  db.exec(`ALTER TABLE items ADD COLUMN purchased_at TEXT DEFAULT ''`);
+}
 
 // 说明：这里刻意不做任何「自动插入示例数据」的逻辑。
 // 数据库是持久化的，清空清单后重启不应把示例数据重新塞回来。
@@ -60,6 +67,7 @@ export interface Item {
   image: string;
   note: string;
   planned_date: string;
+  purchased_at: string;
   status: string;
   created_at: string;
   updated_at: string;

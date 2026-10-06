@@ -13,6 +13,7 @@ export interface Item {
   image: string;
   note: string;
   planned_date: string;
+  purchased_at: string;
   status: ItemStatus;
   created_at: string;
   updated_at: string;
@@ -28,6 +29,7 @@ export interface ItemInput {
   image: string;
   note: string;
   planned_date: string;
+  purchased_at?: string;
   status?: ItemStatus;
 }
 

@@ -49,6 +49,7 @@ app.get('/api/items', (req, res) => {
     image: r.image as string,
     note: r.note as string,
     planned_date: r.planned_date as string,
+    purchased_at: r.purchased_at as string,
     status: r.status as string,
     created_at: r.created_at as string,
     updated_at: r.updated_at as string,
@@ -72,9 +73,16 @@ function n(v: unknown, fallback: number): number {
   return Number.isFinite(num) ? num : fallback;
 }
 
+/** 当前本地时间，格式与 datetime('now','localtime') 一致 */
+function nowLocal(): string {
+  const d = new Date();
+  const p = (v: number) => String(v).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
 // 添加物品
 app.post('/api/items', (req, res) => {
-  const { name, price, quantity, category, priority, link, image, note, planned_date } = req.body;
+  const { name, price, quantity, category, priority, link, image, note, planned_date, status } = req.body;
 
   if (!s(name)) {
     res.status(400).json({ error: '名称必填' });
@@ -83,8 +91,8 @@ app.post('/api/items', (req, res) => {
 
   const result = db
     .prepare(
-      `INSERT INTO items (name, price, quantity, category, priority, link, image, note, planned_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO items (name, price, quantity, category, priority, link, image, note, planned_date, purchased_at, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       s(name),
@@ -95,7 +103,9 @@ app.post('/api/items', (req, res) => {
       s(link),
       s(image),
       s(note),
-      s(planned_date)
+      s(planned_date),
+      s(status) === '已买' ? nowLocal() : '',
+      s(status) || '想买'
     );
 
   const item = db.prepare('SELECT * FROM items WHERE id = ?').get(result.lastInsertRowid) as Record<string, unknown>;
@@ -105,7 +115,7 @@ app.post('/api/items', (req, res) => {
 // 更新物品
 app.put('/api/items/:id', (req, res) => {
   const id = Number(req.params.id);
-  const { name, price, quantity, category, priority, link, image, note, planned_date, status } = req.body;
+  const { name, price, quantity, category, priority, link, image, note, planned_date, purchased_at, status } = req.body;
 
   const existing = db.prepare('SELECT * FROM items WHERE id = ?').get(id) as Record<string, unknown> | undefined;
   if (!existing) {
@@ -113,9 +123,14 @@ app.put('/api/items/:id', (req, res) => {
     return;
   }
 
+  const newStatus = s(status, existing.status as string);
+  // 购买日期优先级：显式传入 > 刚切换到「已买」自动记录 > 保留原值
+  const justBought = newStatus === '已买' && existing.status !== '已买';
+  const purchasedAt = s(purchased_at) || (justBought ? nowLocal() : s(existing.purchased_at as string));
+
   db.prepare(
     `UPDATE items
-     SET name = ?, price = ?, quantity = ?, category = ?, priority = ?, link = ?, image = ?, note = ?, planned_date = ?, status = ?, updated_at = datetime('now', 'localtime')
+     SET name = ?, price = ?, quantity = ?, category = ?, priority = ?, link = ?, image = ?, note = ?, planned_date = ?, purchased_at = ?, status = ?, updated_at = datetime('now', 'localtime')
      WHERE id = ?`
   ).run(
     s(name, existing.name as string),
@@ -127,7 +142,8 @@ app.put('/api/items/:id', (req, res) => {
     s(image, existing.image as string),
     s(note, existing.note as string),
     s(planned_date, existing.planned_date as string),
-    s(status, existing.status as string),
+    purchasedAt,
+    newStatus,
     id
   );
 
@@ -178,6 +194,7 @@ function rowToItem(r: Record<string, unknown>): Item {
     image: r.image as string,
     note: r.note as string,
     planned_date: r.planned_date as string,
+    purchased_at: r.purchased_at as string,
     status: r.status as string,
     created_at: r.created_at as string,
     updated_at: r.updated_at as string,
